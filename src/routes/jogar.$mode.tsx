@@ -220,6 +220,10 @@ function PlayPage() {
             stars={progress.stars ?? 0}
             diagnosis={row.diagnosis}
             mode={mode}
+            pickedExam={progress.exam ?? null}
+            correctExam={row.correct_exam}
+            pickedTreatment={progress.treatment ?? null}
+            correctTreatment={row.correct_treatment}
             onReplay={() => router.invalidate()}
           />
         )}
@@ -266,16 +270,26 @@ function DoneScreen({
   stars,
   diagnosis,
   mode,
+  pickedExam,
+  correctExam,
+  pickedTreatment,
+  correctTreatment,
   onReplay,
 }: {
   stars: number;
   diagnosis: string;
   mode: GameMode;
+  pickedExam: string | null;
+  correctExam: string;
+  pickedTreatment: string | null;
+  correctTreatment: string;
   onReplay: () => void;
 }) {
   const cfg = MODES[mode];
   const filled = "⭐".repeat(stars);
   const empty = "·".repeat(3 - stars);
+  const examOk = pickedExam === correctExam;
+  const txOk = pickedTreatment === correctTreatment;
 
   function share() {
     const text = `${"⭐".repeat(stars) || "·"} MedCase Daily #${dayNumber()} · ${cfg.label}`;
@@ -291,31 +305,83 @@ function DoneScreen({
   }
 
   return (
-    <div className="grid min-h-[70vh] place-items-center text-center animate-in fade-in zoom-in-95 duration-500">
-      <div className="w-full">
+    <div className="animate-in fade-in zoom-in-95 duration-500">
+      <div className="text-center">
         <div className="text-5xl tracking-widest">
           <span className="text-star">{filled}</span>
           <span className="text-muted-foreground">{empty}</span>
         </div>
         <p className="mt-6 text-xs uppercase tracking-widest text-muted-foreground">Diagnóstico</p>
         <h2 className="mt-1 text-2xl font-bold">{diagnosis}</h2>
-
-        <div className="mt-10 flex flex-col gap-2">
-          <button
-            onClick={share}
-            className="w-full rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground"
-          >
-            Compartilhar
-          </button>
-          <Link
-            to="/"
-            className="rounded-xl border border-border bg-card py-3.5 text-sm font-medium text-muted-foreground"
-          >
-            Voltar ao início
-          </Link>
-        </div>
-        <p className="mt-8 text-xs text-muted-foreground">Próximo caso à meia-noite.</p>
       </div>
+
+      <div className="mt-8">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Gabarito
+        </h3>
+        <div className="flex flex-col gap-2">
+          <GabaritoRow
+            label="Exame"
+            picked={pickedExam}
+            correct={correctExam}
+            ok={examOk}
+          />
+          <GabaritoRow
+            label="Conduta"
+            picked={pickedTreatment}
+            correct={correctTreatment}
+            ok={txOk}
+          />
+        </div>
+      </div>
+
+      <div className="mt-8 flex flex-col gap-2">
+        <button
+          onClick={share}
+          className="w-full rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground"
+        >
+          Compartilhar
+        </button>
+        <Link
+          to="/"
+          className="rounded-xl border border-border bg-card py-3.5 text-center text-sm font-medium text-muted-foreground"
+        >
+          Voltar ao início
+        </Link>
+      </div>
+      <p className="mt-8 text-center text-xs text-muted-foreground">Próximo caso à meia-noite.</p>
+    </div>
+  );
+}
+
+function GabaritoRow({
+  label,
+  picked,
+  correct,
+  ok,
+}: {
+  label: string;
+  picked: string | null;
+  correct: string;
+  ok: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-3 text-sm ${
+        ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/40 bg-destructive/5"
+      }`}
+    >
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xs">
+        <span className="text-muted-foreground">Sua resposta: </span>
+        <span className={ok ? "text-emerald-500" : "text-destructive"}>{picked ?? "—"}</span>
+      </p>
+      {!ok && (
+        <p className="text-xs">
+          <span className="text-muted-foreground">Correta: </span>
+          <span className="text-emerald-500">{correct}</span>
+        </p>
+      )}
     </div>
   );
 }

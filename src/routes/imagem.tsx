@@ -41,6 +41,7 @@ function ImagePage() {
   const [correct, setCorrect] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [answers, setAnswers] = useState<Array<{ id: string; prompt: string; image_url: string; picked: string; correct: string }>>([]);
 
   const current = session[idx];
   const options = useMemo(
@@ -53,6 +54,10 @@ function ImagePage() {
     setPicked(opt);
     const ok = opt === current.correct_answer;
     if (ok) setCorrect((c) => c + 1);
+    setAnswers((a) => [
+      ...a,
+      { id: current.id, prompt: current.prompt, image_url: current.image_url, picked: opt, correct: current.correct_answer },
+    ]);
     setTimeout(() => {
       setPicked(null);
       if (idx + 1 >= session.length) setDone(true);
@@ -92,18 +97,65 @@ function ImagePage() {
     };
     const pct = Math.round((correct / session.length) * 100);
     return (
-      <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
-        <div className="w-full max-w-sm animate-in fade-in zoom-in-95 duration-500">
-          <p className="text-5xl">🖼️</p>
-          <p className="mt-6 text-xs uppercase tracking-widest text-muted-foreground">
-            Desafio finalizado
-          </p>
-          <h2 className="mt-1 text-5xl font-bold tracking-tight">
-            {correct}
-            <span className="text-muted-foreground">/{session.length}</span>
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">{pct}% de acerto</p>
-          <div className="mt-10 flex flex-col gap-2">
+      <div className="min-h-screen bg-background px-6 py-10">
+        <div className="mx-auto w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
+          <div className="text-center">
+            <p className="text-5xl">🖼️</p>
+            <p className="mt-6 text-xs uppercase tracking-widest text-muted-foreground">
+              Desafio finalizado
+            </p>
+            <h2 className="mt-1 text-5xl font-bold tracking-tight">
+              {correct}
+              <span className="text-muted-foreground">/{session.length}</span>
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">{pct}% de acerto</p>
+          </div>
+
+          <div className="mt-8">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Gabarito
+            </h3>
+            <div className="flex flex-col gap-3">
+              {answers.map((a, i) => {
+                const ok = a.picked === a.correct;
+                return (
+                  <div
+                    key={a.id}
+                    className={`overflow-hidden rounded-xl border ${
+                      ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/40 bg-destructive/5"
+                    }`}
+                  >
+                    <div className="flex gap-3 p-3">
+                      <img
+                        src={a.image_url}
+                        alt=""
+                        className="h-16 w-16 flex-shrink-0 rounded-md object-cover"
+                      />
+                      <div className="flex-1 text-sm">
+                        <p className="text-[13px] leading-snug text-muted-foreground">
+                          <span className="font-mono">{i + 1}.</span> {a.prompt}
+                        </p>
+                        <p className="mt-2 text-xs">
+                          <span className="text-muted-foreground">Sua resposta: </span>
+                          <span className={ok ? "text-emerald-500" : "text-destructive"}>
+                            {a.picked}
+                          </span>
+                        </p>
+                        {!ok && (
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Correta: </span>
+                            <span className="text-emerald-500">{a.correct}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-2">
             <button
               onClick={share}
               className="w-full rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground"
@@ -112,7 +164,7 @@ function ImagePage() {
             </button>
             <Link
               to="/"
-              className="rounded-xl border border-border bg-card py-3.5 text-sm font-medium text-muted-foreground"
+              className="rounded-xl border border-border bg-card py-3.5 text-center text-sm font-medium text-muted-foreground"
             >
               Voltar ao início
             </Link>

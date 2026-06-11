@@ -42,6 +42,7 @@ function PSPage() {
   const [time, setTime] = useState(TIME_PER_CASE);
   const [feedback, setFeedback] = useState<null | "ok" | "bad">(null);
   const [done, setDone] = useState(false);
+  const [answers, setAnswers] = useState<Array<{ id: string; question: string; picked: string | null; correct: string }>>([]);
 
   const current = session[idx];
 
@@ -72,6 +73,10 @@ function PSPage() {
     if (!current || feedback) return;
     const ok = opt === current.correct_answer;
     if (ok) setCorrect((c) => c + 1);
+    setAnswers((a) => [
+      ...a,
+      { id: current.id, question: current.question, picked: opt, correct: current.correct_answer },
+    ]);
     setFeedback(ok ? "ok" : "bad");
     setTimeout(() => {
       setFeedback(null);
@@ -121,18 +126,58 @@ function PSPage() {
       }
     };
     return (
-      <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
-        <div className="w-full max-w-sm animate-in fade-in zoom-in-95 duration-500">
-          <p className="text-5xl">🚑</p>
-          <p className="mt-6 text-xs uppercase tracking-widest text-muted-foreground">
-            Plantão finalizado
-          </p>
-          <h2 className="mt-1 text-5xl font-bold tracking-tight">
-            {correct}<span className="text-muted-foreground">/{session.length}</span>
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">{pct}% de acerto</p>
+      <div className="min-h-screen bg-background px-6 py-10">
+        <div className="mx-auto w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
+          <div className="text-center">
+            <p className="text-5xl">🚑</p>
+            <p className="mt-6 text-xs uppercase tracking-widest text-muted-foreground">
+              Plantão finalizado
+            </p>
+            <h2 className="mt-1 text-5xl font-bold tracking-tight">
+              {correct}<span className="text-muted-foreground">/{session.length}</span>
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">{pct}% de acerto</p>
+          </div>
 
-          <div className="mt-10 flex flex-col gap-2">
+          <div className="mt-8">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Gabarito
+            </h3>
+            <div className="flex flex-col gap-2">
+              {answers.map((a, i) => {
+                const ok = a.picked === a.correct;
+                return (
+                  <div
+                    key={a.id}
+                    className={`rounded-xl border p-3 text-sm ${
+                      ok ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/40 bg-destructive/5"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">{i + 1}.</span>
+                      <div className="flex-1">
+                        <p className="text-[13px] leading-snug">{a.question}</p>
+                        <p className="mt-2 text-xs">
+                          <span className="text-muted-foreground">Sua resposta: </span>
+                          <span className={ok ? "text-emerald-500" : "text-destructive"}>
+                            {a.picked ?? "— (tempo esgotado)"}
+                          </span>
+                        </p>
+                        {!ok && (
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Correta: </span>
+                            <span className="text-emerald-500">{a.correct}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-2">
             <button
               onClick={share}
               className="w-full rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground"
@@ -141,7 +186,7 @@ function PSPage() {
             </button>
             <Link
               to="/"
-              className="rounded-xl border border-border bg-card py-3.5 text-sm font-medium text-muted-foreground"
+              className="rounded-xl border border-border bg-card py-3.5 text-center text-sm font-medium text-muted-foreground"
             >
               Voltar ao início
             </Link>
